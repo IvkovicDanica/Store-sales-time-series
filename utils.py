@@ -111,11 +111,13 @@ def get_seasonality_trend_overview(df_original: pd.DataFrame, target_variable: s
 
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(17, 6))
 
+    # Year-wise box plot
     sns.boxplot(x=df_sesonality['year'], y=df_sesonality[target_variable], palette="turbo",ax=ax[0])
     ax[0].set_title('Year-wise Box Plot\n(The Trend)', fontsize = 20, loc='center', fontdict=dict(weight='bold'))
     ax[0].set_xlabel('Year', fontsize = 16, fontdict=dict(weight='bold'))
     ax[0].set_ylabel(f'{title_name} by Year', fontsize = 16, fontdict=dict(weight='bold'))
 
+    # Month-wise box plot
     sns.boxplot(x=df_sesonality['month'], y=df_sesonality[target_variable], palette="Pastel2", ax=ax[1])
     ax[1].set_title('Month-wise Box Plot\n(The Seasonality)', fontsize = 20, loc='center', fontdict=dict(weight='bold'))
     ax[1].set_xlabel('Month', fontsize = 16, fontdict=dict(weight='bold'))
