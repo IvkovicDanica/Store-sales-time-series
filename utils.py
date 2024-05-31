@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 import pandas as pd
-import warnings
 
 
 def plot_periodogram(ts, detrend='linear', ax=None):
@@ -63,7 +61,7 @@ def plot_period_mean(df_original: pd.DataFrame, target_variable: str, period: st
             ax.plot(dayofweek_mean.index, dayofweek_mean.values, label=f'Year {year}')
             
     # Set the title and labels
-    title = 'Monthly Average Transactions' if period == 'M' else 'Transactions by Day of the Week' 
+    title = f'Monthly Average {target_variable}' if period == 'M' else f'{target_variable} by Day of the Week' 
     xlabel = 'Date' if period == 'M' else 'Day of the Week'
     ax.set_title(f'{title}', fontsize=20)
     ax.set_xlabel('Date', fontsize=15)

@@ -37,15 +37,15 @@ def plot_periodogram(ts, detrend='linear', ax=None):
     return ax
 
 
-def plot_period_mean(df_original: pd.DataFrame, period: str='M'):
+def plot_period_mean(df_original: pd.DataFrame, target_variable: str, period: str='M'):
     if period == 'M':
-        temp = df_original.set_index('date').resample(period).transactions.mean().reset_index()
+        temp = df_original.set_index('date').resample(period)[[target_variable]].mean().reset_index()
         temp['year'] = temp.date.dt.year
     elif period == 'DW':
         temp = df_original.copy()
         temp["year"] = temp.date.dt.year
         temp["dayofweek"] = temp.date.dt.dayofweek
-        temp = temp.groupby(["year", "dayofweek"]).transactions.mean().reset_index()
+        temp = temp.groupby(["year", "dayofweek"])[[target_variable]].mean().reset_index()
     else:
         raise ValueError('Not valid value for period, only M and DW supported')
     
@@ -55,13 +55,13 @@ def plot_period_mean(df_original: pd.DataFrame, period: str='M'):
     # Plot each year's transactions
     for year, data in temp.groupby('year'):
         if period == 'M':
-            ax.plot(data['date'], data['transactions'], label=f'Year {year}')
+            ax.plot(data['date'], data[target_variable], label=f'Year {year}')
         else:
-            dayofweek_mean = data.groupby('dayofweek')['transactions'].mean()
+            dayofweek_mean = data.groupby('dayofweek')[target_variable].mean()
             ax.plot(dayofweek_mean.index, dayofweek_mean.values, label=f'Year {year}')
             
     # Set the title and labels
-    title = 'Monthly Average Transactions' if period == 'M' else 'Transactions by Day of the Week' 
+    title = f'Monthly Average {target_variable}' if period == 'M' else f'{target_variable} by Day of the Week' 
     xlabel = 'Date' if period == 'M' else 'Day of the Week'
     ax.set_title(f'{title}', fontsize=20)
     ax.set_xlabel('Date', fontsize=15)
