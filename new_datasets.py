@@ -50,6 +50,7 @@ holidays.loc[holidays["description"].str.contains("futbol"), "description"] = "F
 local_holidays=holidays[holidays['locale']=='Local']
 local_holidays=local_holidays.rename(columns={'locale_name':'city','description': 'local_holidays'})
 local_holidays=local_holidays.reset_index(drop=True)
+local_holidays = local_holidays.drop_duplicates()
 local_holidays.drop(columns=['locale','type'],inplace=True)
 
 local_holidays1=local_holidays.copy()
@@ -60,6 +61,7 @@ local_holidays1['local_holidays'] = local_holidays1['local_holidays'].apply(lamb
 regional_holidays=holidays[holidays['locale']=='Regional']
 regional_holidays=regional_holidays.rename(columns={'locale_name':'state', 'description':'regional_holidays'})
 regional_holidays=regional_holidays.reset_index(drop=True)
+regional_holidays = regional_holidays.drop_duplicates()
 regional_holidays.drop(columns=['locale','type'],inplace=True)
 
 regional_holidays1=regional_holidays.copy()
@@ -70,11 +72,16 @@ regional_holidays1['regional_holidays'] = regional_holidays1['regional_holidays'
 national_holidays=holidays[holidays['locale']=='National']
 national_holidays=national_holidays.rename(columns={'description':'national_holidays'})
 national_holidays=national_holidays.reset_index(drop=True)
+national_holidays = national_holidays.drop_duplicates()
 national_holidays.drop(columns=['locale','type','locale_name'],inplace=True)
 
 national_holidays1=national_holidays.copy()
 national_holidays2=national_holidays.copy()
 national_holidays1['national_holidays'] = national_holidays1['national_holidays'].apply(lambda x: 'N ' + x)
+
+local_holidays.to_csv('holiday_datasets/local_holidays.csv', index=False)
+regional_holidays.to_csv('holiday_datasets/regional_holidays.csv', index=False)
+national_holidays.to_csv('holiday_datasets/national_holidays.csv', index=False)
 
 df = pd.concat([train, test]).reset_index(drop=True)
 df['id']=np.arange(0,df.shape[0])
