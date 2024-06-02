@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import numpy as np
 
+############################################### PLOTING FUNCTIONS ###############################################
 
 def plot_periodogram(ts, detrend='linear', ax=None):
     from scipy.signal import periodogram
@@ -134,5 +136,70 @@ def get_seasonality_trend_overview(df_original: pd.DataFrame, target_variable: s
                         'Thursday', 'Friday', 'Saturday','Sunday'])
     
     
+    
+############################################### FEATURE ENGINEERING FUNCTIONS ###############################################    
+
+def create_date_features(df: pd.DataFrame):
+    df['month'] = df.date.dt.month.astype('int8')
+    df['day_of_month'] = df.date.dt.day.astype('int8')
+    df['day_of_year'] = df.date.dt.dayofyear.astype('int16')
+    df['week_of_month'] = (df.date.apply(lambda d: (d.day-1) // 7 + 1)).astype('int8')
+    df['week_of_year'] = (df.date.dt.isocalendar().week).astype('int8')
+    df['day_of_week'] = (df.date.dt.dayofweek + 1).astype('int8') # since our transactions/sales depend on day of the week this feature will capture seasonality
+    df['year'] = df.date.dt.year.astype('int32')
+    df['is_wknd'] = (df.date.dt.weekday // 4).astype('int8')
+    df['quarter'] = df.date.dt.quarter.astype('int8')
+    df['is_month_start'] = df.date.dt.is_month_start.astype('int8')
+    df['is_month_end'] = df.date.dt.is_month_end.astype('int8')
+    df['is_quarter_start'] = df.date.dt.is_quarter_start.astype('int8')
+    df['is_quarter_end'] = df.date.dt.is_quarter_end.astype('int8')
+    df['is_year_start'] = df.date.dt.is_year_start.astype('int8')
+    df['is_year_end'] = df.date.dt.is_year_end.astype('int8')
+    df["date_index"] = df.date.factorize()[0]
+    # 0: Winter - 1: Spring - 2: Summer - 3: Fall
+    df['season'] = np.where(df.month.isin([12,1,2]), 0, 1)
+    df['season'] = np.where(df.month.isin([6,7,8]), 2, df['season'])
+    df['season'] = pd.Series(np.where(df.month.isin([9, 10, 11]), 3, df['season'])).astype('int8')
+    return df
+
+
+def create_work_related_features(df: pd.DataFrame):
+    df['workday'] = np.where((df.local_holidays == 1) | (df.national_holidays==1) | (df.regional_holidays==1) | (df['day_of_week'].isin([6,7])), 0, 1)
+    df['wageday'] = pd.Series(np.where((df['is_month_end'] == 1) | (df['day_of_month'] == 15), 1, 0)).astype('int8')
+    return df
+
+
+
+############################################### ZERO FORECASTING ###############################################
+def num_trailing_zeros(series: pd.Series):
+    '''
+    Checks number of trailing zeros in a series
+    ex. [1, 2, 3, 0, 0, 0] -> 3
+    '''
+    # finds indices of non-zero elements and returns that array
+    nz_idx = np.where(series!=0)[0]
+    # Checks if the array of non-zero indices is empty. If it is, it means all elements in the series are zero 
+    if len(nz_idx) == 0:
+        return len(series)
+    else:
+        # If the array of non-zero indices is not empty, the number of trailing zeros is calculated as the length of the series minus the last non-zero index minus one
+        return len(series) - nz_idx[-1] - 1
+    
+
+def num_leading_zeros(series: pd.Series):
+    '''
+    Checks number of leading zeros in a series
+    ex. [0,0,0,1,2] -> 3
+    '''
+    # finds indices of non-zero elements and returns that array
+    nz_idx = np.where(series != 0)[0]
+    # if that array is empty then there are same amount of zeros as the length of a series
+    if len(nz_idx) == 0:
+        return len(series)
+    else:
+        # returns index of a first non-zero element
+        return nz_idx[0]
+
+
 if __name__ == '__main__':
     pass
