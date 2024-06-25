@@ -78,8 +78,7 @@ def plot_period_mean(df_original: pd.DataFrame, target_variable: str, period: st
     # Increase the y-axis label size
     plt.yticks(fontsize=12)
 
-    plt.show()
-    
+    plt.show()    
 
 
 def plot_boxplot(palette, x, y, hue, ax, title):
