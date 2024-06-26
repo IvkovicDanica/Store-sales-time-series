@@ -7,6 +7,8 @@ import pandas as pd
 import scipy.stats as stats
 
 
+####################################### PLOTING FUNCTIONS ########################################
+
 def plot_periodogram(ts, detrend='linear', ax=None):
     fs = pd.Timedelta(days=365) / pd.Timedelta(days=1)
     freqencies, spectrum = periodogram(
@@ -145,52 +147,6 @@ def plot_zeros(data_to_plot, name):
 
     plt.tight_layout()
     plt.show()
-      
-      
-def AB_test(dataframe, group, target, holidays=None, local=False):
-    #splitting groups
-    if local:
-        print(holidays.head())
-        name = holidays["name"]
-        city = holidays[name == group].city.values[0]
-        #splitting groups
-        groupA=dataframe[(dataframe["city"]==city)&(dataframe[group]==1)&(dataframe["national_holidays"]==0)&(dataframe["regional_holidays"]==0)][target] #holiday
-        groupB=dataframe[(dataframe["city"]==city)&(dataframe[group]==0)&(dataframe["national_holidays"]==0)&(dataframe["regional_holidays"]==0)][target] #not holiday
-    else:
-        groupA = dataframe[dataframe[group] == 1][target] #holiday
-        groupB = dataframe[dataframe[group] == 0][target] #not holiday
-
-    # checking homogeneity of variances using levene test
-    # H0: there is homogeneity of variances
-    leveneTest_p = stats.levene(groupA, groupB)[1]
-
-    if leveneTest_p < 0.05:
-        # heterogeneous
-
-        # t test
-        # H0: M1 == M2
-        p = stats.ttest_ind(groupA, groupB, equal_var=False)[1]
-    else:
-        # homogeneity
-
-        # ttest
-        # H0: M1 == M2
-        p = stats.ttest_ind(groupA, groupB, equal_var=True)[1]
-        
-    group = [group]
-    p = [p]
-
-    AB = pd.DataFrame({
-    "Feature": group,
-    "p-value": p,
-    "Hypothesis": np.where(np.array(p) >= 0.05, "Fail to Reject H0", "Reject H0"),
-    "Comment": np.where(np.array(p) >= 0.05, "A/B groups are similar", "A/B groups are not similar"),
-    "GroupA_mean": np.mean(groupA),
-    "GroupB_mean": np.mean(groupB),
-    "GroupA_median": np.median(groupA),
-    "GroupB_median": np.median(groupB)
-    })
-    return AB
 
 
 def plot_boxplots(data : pd.DataFrame, y : str):
@@ -241,50 +197,24 @@ def plot_correlation(col1: pd.Series, col2: pd.Series):
     plt.tight_layout()
     plt.show()
   
-def AB_test_local_holidays(dataframe, group, target, holidays):
 
+################################### A/B TESTING ###############################################
+
+def AB_test_local_holidays(dataframe, group, target, holidays):
     s=holidays['name']
     city=holidays[s ==group].city.values[0]
     #splitting groups
     groupA=dataframe[(dataframe['city']==city)&(dataframe[group]==1)&(dataframe['national_holidays']==0)&(dataframe['regional_holidays']==0)][target] #holiday
     groupB=dataframe[(dataframe['city']==city)&(dataframe[group]==0)&(dataframe['national_holidays']==0)&(dataframe['regional_holidays']==0)][target] #not holiday
-
-
-    # checking distributin of groups using shapiro 
-    # H0: distribution is normal
-    # pA=shapiro(groupA)[1]
-    # pB=shapiro(groupB)[1]
-
-    # if (pA >=0.05) & (pB>=0.05):
-    #     both are normally distributed so we use parametric test
-
-    # checking homogeneity of variances using levene test
-    # H0: there is homogeneity of variances
     leveneTest_p = stats.levene(groupA, groupB)[1]
 
     if leveneTest_p<0.05:
-        #heterogeneous
-
-        #t test
-        #H0: M1 == M2
         p=stats.ttest_ind(groupA, groupB, equal_var=False)[1]
     else:
-        #homogeneity
-
-        #ttest
-        #H0:M1==M2
         p=stats.ttest_ind(groupA, groupB, equal_var=True)[1]
-    # else:
-    #     #non-parametric test
-
-    #     #Mann-Whitney U test
-    #     # H0: M1 == M2
-    #     p=stats.mannwhitneyu(groupA, groupB)[1]
 
     group = [group]
     p = [p]
-    # pA = [pA]
-    # pB = [pB]
 
     AB = pd.DataFrame({
     "Feature": group,
@@ -301,47 +231,18 @@ def AB_test_local_holidays(dataframe, group, target, holidays):
 
   
 def AB_test_national_holidays(dataframe, group, target):
-
     #splitting groups
     groupA=dataframe[(dataframe[group]==1)][target] #holiday
     groupB=dataframe[(dataframe[group]==0)&(dataframe['national_holidays']==0)][target] #not holiday
-
-
-    # checking distributin of groups using shapiro 
-    # H0: distribution is normal
-    # pA=shapiro(groupA)[1]
-    # pB=shapiro(groupB)[1]
-
-    # if (pA >=0.05) & (pB>=0.05):
-    #     both are normally distributed so we use parametric test
-
-    # checking homogeneity of variances using levene test
-    # H0: there is homogeneity of variances
     leveneTest_p = stats.levene(groupA, groupB)[1]
 
     if leveneTest_p<0.05:
-        #heterogeneous
-
-        #t test
-        #H0: M1 == M2
         p=stats.ttest_ind(groupA, groupB, equal_var=False)[1]
     else:
-        #homogeneity
-
-        #ttest
-        #H0:M1==M2
         p=stats.ttest_ind(groupA, groupB, equal_var=True)[1]
-    # else:
-    #     #non-parametric test
-
-    #     #Mann-Whitney U test
-    #     # H0: M1 == M2
-    #     p=stats.mannwhitneyu(groupA, groupB)[1]
 
     group = [group]
     p = [p]
-    # pA = [pA]
-    # pB = [pB]
 
     AB = pd.DataFrame({
     "Feature": group,
@@ -355,6 +256,37 @@ def AB_test_national_holidays(dataframe, group, target):
     "GroupB_median": np.median(groupB)
     })
     return AB
+  
+################################### FEATURE ENGINEERING ###################################
+
+def create_date_features(df: pd.DataFrame):
+    df['month'] = df.date.dt.month.astype('int8')
+    df['day_of_month'] = df.date.dt.day.astype('int8')
+    df['day_of_year'] = df.date.dt.dayofyear.astype('int16')
+    df['week_of_month'] = (df.date.apply(lambda d: (d.day-1) // 7 + 1)).astype('int8')
+    df['week_of_year'] = (df.date.dt.isocalendar().week).astype('int8')
+    df['day_of_week'] = (df.date.dt.dayofweek + 1).astype('int8') # since our transactions/sales depend on day of the week this feature will capture seasonality
+    df['year'] = df.date.dt.year.astype('int32')
+    df['is_wknd'] = (df.date.dt.weekday // 4).astype('int8')
+    df['quarter'] = df.date.dt.quarter.astype('int8')
+    df['is_month_start'] = df.date.dt.is_month_start.astype('int8')
+    df['is_month_end'] = df.date.dt.is_month_end.astype('int8')
+    df['is_quarter_start'] = df.date.dt.is_quarter_start.astype('int8')
+    df['is_quarter_end'] = df.date.dt.is_quarter_end.astype('int8')
+    df['is_year_start'] = df.date.dt.is_year_start.astype('int8')
+    df['is_year_end'] = df.date.dt.is_year_end.astype('int8')
+    df["date_index"] = df.date.factorize()[0]
+    # 0: Winter - 1: Spring - 2: Summer - 3: Fall
+    df['season'] = np.where(df.month.isin([12,1,2]), 0, 1)
+    df['season'] = np.where(df.month.isin([6,7,8]), 2, df['season'])
+    df['season'] = pd.Series(np.where(df.month.isin([9, 10, 11]), 3, df['season'])).astype('int8')
+    return df
+
+
+def create_work_related_features(df: pd.DataFrame):
+    df['workday'] = np.where((df.local_holidays == 1) | (df.national_holidays==1) | (df.regional_holidays==1) | (df['day_of_week'].isin([6,7])), 0, 1)
+    df['wageday'] = pd.Series(np.where((df['is_month_end'] == 1) | (df['day_of_month'] == 15), 1, 0)).astype('int8')
+    return df
   
   
 if __name__ == '__main__':
