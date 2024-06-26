@@ -1,10 +1,13 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+from scipy.signal import periodogram
+import numpy as np
+import pandas as pd
+import scipy.stats as stats
 
 
 def plot_periodogram(ts, detrend='linear', ax=None):
-    from scipy.signal import periodogram
     fs = pd.Timedelta(days=365) / pd.Timedelta(days=1)
     freqencies, spectrum = periodogram(
         ts,
@@ -72,12 +75,10 @@ def plot_period_mean(df_original: pd.DataFrame, target_variable: str, period: st
         ax.set_xticks(range(7))
         ax.set_xticklabels(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], rotation=45, fontsize=12)
 
-    
     # Rotate the x-axis labels for better readability
     plt.xticks(rotation=45, fontsize=12)
     # Increase the y-axis label size
     plt.yticks(fontsize=12)
-
     plt.show()    
 
 
@@ -107,7 +108,6 @@ def get_seasonality_trend_overview(df_original: pd.DataFrame, target_variable: s
     ax.set_xlabel('Month', fontsize = 16, fontdict=dict(weight='bold'))
     ax.set_ylabel(f'{title_name}', fontsize = 16, fontdict=dict(weight='bold'))
 
-
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(17, 6))
 
     # Year-wise box plot
@@ -133,5 +133,65 @@ def get_seasonality_trend_overview(df_original: pd.DataFrame, target_variable: s
                         'Thursday', 'Friday', 'Saturday','Sunday'])
     
     
+def plot_zeros(data_to_plot, name):
+    fig = plt.figure(figsize=(18,6))
+    ax0 = sns.boxplot(data=data_to_plot, x="store_nbr", y=name, color="blue", ax=fig.add_subplot(211))
+    plt.title(f"{name} within each store")
+
+    # by family
+    ax1 = sns.boxplot(data=data_to_plot, x="family", y=name, color="yellow", ax=fig.add_subplot(212))
+    plt.title(f"{name} within each family")
+    plt.xticks(rotation=90)
+
+    plt.tight_layout()
+    plt.show()
+      
+      
+def AB_test(dataframe, group, target, holidays=None, local=False):
+    #splitting groups
+    if local:
+        print(holidays.head())
+        name = holidays["name"]
+        city = holidays[name == group].city.values[0]
+        #splitting groups
+        groupA=dataframe[(dataframe["city"]==city)&(dataframe[group]==1)&(dataframe["national_holidays"]==0)&(dataframe["regional_holidays"]==0)][target] #holiday
+        groupB=dataframe[(dataframe["city"]==city)&(dataframe[group]==0)&(dataframe["national_holidays"]==0)&(dataframe["regional_holidays"]==0)][target] #not holiday
+    else:
+        groupA = dataframe[dataframe[group] == 1][target] #holiday
+        groupB = dataframe[dataframe[group] == 0][target] #not holiday
+
+    # checking homogeneity of variances using levene test
+    # H0: there is homogeneity of variances
+    leveneTest_p = stats.levene(groupA, groupB)[1]
+
+    if leveneTest_p < 0.05:
+        # heterogeneous
+
+        # t test
+        # H0: M1 == M2
+        p = stats.ttest_ind(groupA, groupB, equal_var=False)[1]
+    else:
+        # homogeneity
+
+        # ttest
+        # H0: M1 == M2
+        p = stats.ttest_ind(groupA, groupB, equal_var=True)[1]
+        
+    group = [group]
+    p = [p]
+
+    AB = pd.DataFrame({
+    "Feature": group,
+    "p-value": p,
+    "Hypothesis": np.where(np.array(p) >= 0.05, "Fail to Reject H0", "Reject H0"),
+    "Comment": np.where(np.array(p) >= 0.05, "A/B groups are similar", "A/B groups are not similar"),
+    "GroupA_mean": np.mean(groupA),
+    "GroupB_mean": np.mean(groupB),
+    "GroupA_median": np.median(groupA),
+    "GroupB_median": np.median(groupB)
+    })
+    return AB
+
+  
 if __name__ == '__main__':
     pass

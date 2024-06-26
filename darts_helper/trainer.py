@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from darts import TimeSeries
-from tqdm import tqdm
+from tqdm.notebook import tqdm_notebook
 from dataclasses import dataclass
 from darts_helper.numeric import rmsle, clip
 from darts_helper.models import get_models
@@ -177,7 +177,7 @@ class Trainer:
         model_metrics_history = []
         ens_metric_history = []
         
-        for fam in tqdm(self.target_dict, desc="Performing validation"):
+        for fam in tqdm_notebook(self.target_dict, desc="Performing validation"):
             target = self.target_dict[fam]
             pipe = self.pipe_dict[fam]
             past_covs = self.past_dict[fam]
@@ -235,7 +235,7 @@ class Trainer:
                                     The date should be in 'YYYY-MM-DD' format. Defaults to None.
         """        
         forecasts = []
-        for fam in tqdm(self.target_dict.keys(), desc="Generating forecasts"):
+        for fam in tqdm_notebook(self.target_dict.keys(), desc="Generating forecasts"):
             target = self.target_dict[fam]
             pipe = self.pipe_dict[fam]
             target_id = self.id_dict[fam]
