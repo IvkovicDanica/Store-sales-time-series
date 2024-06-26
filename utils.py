@@ -192,6 +192,55 @@ def AB_test(dataframe, group, target, holidays=None, local=False):
     })
     return AB
 
+
+def plot_boxplots(data : pd.DataFrame, y : str):
+
+    plot_kwargs = {
+        "palette": ["red", "green"],
+        "linewidth": 2,
+        "flierprops": {"alpha": 0.2},
+        "orient": "h",
+    }
+    
+    fig = plt.figure(figsize=(18, 20))
+
+    sns.boxplot(
+        data=data, #saturday
+        y=y,
+        x="sales_scaled",
+        ax=fig.add_subplot(531),
+        **plot_kwargs,
+    )
+    plt.yticks([0, 1], ["no", "yes"])
+        
+    plt.suptitle(f"Distribution of {y}")
+    plt.tight_layout()
+    plt.show()
+
+  
+def plot_correlation(col1: pd.Series, col2: pd.Series):
+    # calculate the correlation
+    correlation = col1.corr(col2)
+    print(f"Correlation between {col1.name} and {col2.name}: {correlation}")
+
+    plt.figure(figsize=(14, 6))
+
+    # plot scatter plot
+    plt.subplot(1, 2, 1)
+    sns.scatterplot(x=col1, y=col2)
+    plt.title(f'Scatter plot of {col1.name} vs {col2.name}')
+    plt.xlabel(col1.name)
+    plt.ylabel(col2.name)
+
+    # plot heatmap
+    plt.subplot(1, 2, 2)
+    corr_matrix = pd.DataFrame({col1.name: col1, col2.name: col2}).corr()
+    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1, cbar=True)
+    plt.title('Correlation heatmap')
+
+    plt.tight_layout()
+    plt.show()
+  
   
 if __name__ == '__main__':
     pass
