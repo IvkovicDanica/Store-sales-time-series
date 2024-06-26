@@ -201,17 +201,17 @@ def plot_correlation(col1: pd.Series, col2: pd.Series):
 ################################### A/B TESTING ###############################################
 
 def AB_test_local_holidays(dataframe, group, target, holidays):
-    s=holidays['name']
-    city=holidays[s ==group].city.values[0]
+    s = holidays['name']
+    city = holidays[s == group].city.values[0]
     #splitting groups
-    groupA=dataframe[(dataframe['city']==city)&(dataframe[group]==1)&(dataframe['national_holidays']==0)&(dataframe['regional_holidays']==0)][target] #holiday
-    groupB=dataframe[(dataframe['city']==city)&(dataframe[group]==0)&(dataframe['national_holidays']==0)&(dataframe['regional_holidays']==0)][target] #not holiday
+    groupA = dataframe[(dataframe['city']==city)&(dataframe[group]==1)&(dataframe['national_holidays']==0)&(dataframe['regional_holidays']==0)][target] #holiday
+    groupB = dataframe[(dataframe['city']==city)&(dataframe[group]==0)&(dataframe['national_holidays']==0)&(dataframe['regional_holidays']==0)][target] #not holiday
     leveneTest_p = stats.levene(groupA, groupB)[1]
 
     if leveneTest_p<0.05:
-        p=stats.ttest_ind(groupA, groupB, equal_var=False)[1]
+        p = stats.ttest_ind(groupA, groupB, equal_var=False)[1]
     else:
-        p=stats.ttest_ind(groupA, groupB, equal_var=True)[1]
+        p = stats.ttest_ind(groupA, groupB, equal_var=True)[1]
 
     group = [group]
     p = [p]
@@ -232,14 +232,43 @@ def AB_test_local_holidays(dataframe, group, target, holidays):
   
 def AB_test_national_holidays(dataframe, group, target):
     #splitting groups
-    groupA=dataframe[(dataframe[group]==1)][target] #holiday
-    groupB=dataframe[(dataframe[group]==0)&(dataframe['national_holidays']==0)][target] #not holiday
+    groupA = dataframe[(dataframe[group] == 1)][target] #holiday
+    groupB = dataframe[(dataframe[group] == 0)&(dataframe['national_holidays']==0)][target] #not holiday
     leveneTest_p = stats.levene(groupA, groupB)[1]
 
     if leveneTest_p<0.05:
-        p=stats.ttest_ind(groupA, groupB, equal_var=False)[1]
+        p = stats.ttest_ind(groupA, groupB, equal_var=False)[1]
     else:
-        p=stats.ttest_ind(groupA, groupB, equal_var=True)[1]
+        p = stats.ttest_ind(groupA, groupB, equal_var=True)[1]
+
+    group = [group]
+    p = [p]
+
+    AB = pd.DataFrame({
+    "Feature": group,
+    "p-value": p,
+    #"Test": np.where((np.array(pA) == False) & (np.array(pB) == False), "t-Test (p)", "Mann-Whitney U (nonp)"),
+    "Hypothesis": np.where(np.array(p) >= 0.05, "Fail to Reject H0", "Reject H0"),
+    "Comment": np.where(np.array(p) >= 0.05, "A/B groups are similar", "A/B groups are not similar"),
+    "GroupA_mean": np.mean(groupA),
+    "GroupB_mean": np.mean(groupB),
+    "GroupA_median": np.median(groupA),
+    "GroupB_median": np.median(groupB)
+    })
+    return AB
+
+
+def AB_test_regional_holidays(dataframe, group, target, holidays):
+    s = holidays['name']
+    state = holidays[s == group].state.values[0]
+    groupA = dataframe[(dataframe['state']==state)&(dataframe[group]==1)&(dataframe['national_holidays']==0)][target] #holiday
+    groupB = dataframe[(dataframe['state']==state)&(dataframe[group]==0)&(dataframe['national_holidays']==0)][target] #not holiday
+    leveneTest_p = stats.levene(groupA, groupB)[1]
+
+    if leveneTest_p<0.05:
+        p = stats.ttest_ind(groupA, groupB, equal_var=False)[1]
+    else:
+        p = stats.ttest_ind(groupA, groupB, equal_var=True)[1]
 
     group = [group]
     p = [p]
