@@ -79,7 +79,7 @@ class Trainer:
         return train, valid
     
     
-    def predict(self, train, pipe, past_covs, future_covs, drop_before, train_cycle=True):
+    def predicting(self, train, pipe, past_covs, future_covs, drop_before, train_cycle=True):
         """
         Generates forecasts using multiple models, applies inverse transformations, and performs ensemble averaging.
 
@@ -195,7 +195,7 @@ class Trainer:
 
                 # generate forecasts and compute metric
                 self.models = get_models(model_names, model_configs)
-                pred_list, ens_pred = self.predict(train, pipe, past_covs, future_covs, drop_before) 
+                pred_list, ens_pred = self.predicting(train, pipe, past_covs, future_covs, drop_before) 
                 metric_list = [rmsle(valid, pred) / self.folds for pred in pred_list]
                 model_metrics.append(metric_list)
                 if len(self.models) > 1:
@@ -225,7 +225,7 @@ class Trainer:
             + (f" - ens: {np.mean(ens_metric_history):.5f}" if len(self.models) > 1 else ""),
         )
         
-    def ensemble_predict(self, drop_before=None):
+    def ensemble_predict(self, drop_before=None, train_cyc=False):
         """
         Generates ensemble forecasts for all families and stores, and combines them into a single DataFrame.
         
@@ -242,7 +242,7 @@ class Trainer:
             past_covs = self.past_dict[fam]
             future_covs = self.future_dict[fam]
             
-            _, ens_pred = self.predict(self.models, target, pipe, past_covs, future_covs, drop_before, train_cycle=False)
+            _, ens_pred = self.predicting(target, pipe, past_covs, future_covs, drop_before, train_cycle=train_cyc)
             ens_pred = [p.pd_dataframe().assign(store_nbr=i["store_nbr"]["sales"], family=i["family"]) for p, i in zip(ens_pred, target_id)]
             ens_pred = pd.concat(ens_pred, axis=0)
             forecasts.append(ens_pred)
