@@ -241,6 +241,121 @@ def plot_correlation(col1: pd.Series, col2: pd.Series):
     plt.tight_layout()
     plt.show()
   
+def AB_test_local_holidays(dataframe, group, target, holidays):
+
+    s=holidays['name']
+    city=holidays[s ==group].city.values[0]
+    #splitting groups
+    groupA=dataframe[(dataframe['city']==city)&(dataframe[group]==1)&(dataframe['national_holidays']==0)&(dataframe['regional_holidays']==0)][target] #holiday
+    groupB=dataframe[(dataframe['city']==city)&(dataframe[group]==0)&(dataframe['national_holidays']==0)&(dataframe['regional_holidays']==0)][target] #not holiday
+
+
+    # checking distributin of groups using shapiro 
+    # H0: distribution is normal
+    # pA=shapiro(groupA)[1]
+    # pB=shapiro(groupB)[1]
+
+    # if (pA >=0.05) & (pB>=0.05):
+    #     both are normally distributed so we use parametric test
+
+    # checking homogeneity of variances using levene test
+    # H0: there is homogeneity of variances
+    leveneTest_p = stats.levene(groupA, groupB)[1]
+
+    if leveneTest_p<0.05:
+        #heterogeneous
+
+        #t test
+        #H0: M1 == M2
+        p=stats.ttest_ind(groupA, groupB, equal_var=False)[1]
+    else:
+        #homogeneity
+
+        #ttest
+        #H0:M1==M2
+        p=stats.ttest_ind(groupA, groupB, equal_var=True)[1]
+    # else:
+    #     #non-parametric test
+
+    #     #Mann-Whitney U test
+    #     # H0: M1 == M2
+    #     p=stats.mannwhitneyu(groupA, groupB)[1]
+
+    group = [group]
+    p = [p]
+    # pA = [pA]
+    # pB = [pB]
+
+    AB = pd.DataFrame({
+    "Feature": group,
+    "p-value": p,
+    #"Test": np.where((np.array(pA) == False) & (np.array(pB) == False), "t-Test (p)", "Mann-Whitney U (nonp)"),
+    "Hypothesis": np.where(np.array(p) >= 0.05, "Fail to Reject H0", "Reject H0"),
+    "Comment": np.where(np.array(p) >= 0.05, "A/B groups are similar", "A/B groups are not similar"),
+    "GroupA_mean": np.mean(groupA),
+    "GroupB_mean": np.mean(groupB),
+    "GroupA_median": np.median(groupA),
+    "GroupB_median": np.median(groupB)
+    })
+    return AB  
+
+  
+def AB_test_national_holidays(dataframe, group, target):
+
+    #splitting groups
+    groupA=dataframe[(dataframe[group]==1)][target] #holiday
+    groupB=dataframe[(dataframe[group]==0)&(dataframe['national_holidays']==0)][target] #not holiday
+
+
+    # checking distributin of groups using shapiro 
+    # H0: distribution is normal
+    # pA=shapiro(groupA)[1]
+    # pB=shapiro(groupB)[1]
+
+    # if (pA >=0.05) & (pB>=0.05):
+    #     both are normally distributed so we use parametric test
+
+    # checking homogeneity of variances using levene test
+    # H0: there is homogeneity of variances
+    leveneTest_p = stats.levene(groupA, groupB)[1]
+
+    if leveneTest_p<0.05:
+        #heterogeneous
+
+        #t test
+        #H0: M1 == M2
+        p=stats.ttest_ind(groupA, groupB, equal_var=False)[1]
+    else:
+        #homogeneity
+
+        #ttest
+        #H0:M1==M2
+        p=stats.ttest_ind(groupA, groupB, equal_var=True)[1]
+    # else:
+    #     #non-parametric test
+
+    #     #Mann-Whitney U test
+    #     # H0: M1 == M2
+    #     p=stats.mannwhitneyu(groupA, groupB)[1]
+
+    group = [group]
+    p = [p]
+    # pA = [pA]
+    # pB = [pB]
+
+    AB = pd.DataFrame({
+    "Feature": group,
+    "p-value": p,
+    #"Test": np.where((np.array(pA) == False) & (np.array(pB) == False), "t-Test (p)", "Mann-Whitney U (nonp)"),
+    "Hypothesis": np.where(np.array(p) >= 0.05, "Fail to Reject H0", "Reject H0"),
+    "Comment": np.where(np.array(p) >= 0.05, "A/B groups are similar", "A/B groups are not similar"),
+    "GroupA_mean": np.mean(groupA),
+    "GroupB_mean": np.mean(groupB),
+    "GroupA_median": np.median(groupA),
+    "GroupB_median": np.median(groupB)
+    })
+    return AB
+  
   
 if __name__ == '__main__':
     pass
